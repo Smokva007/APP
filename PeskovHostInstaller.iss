@@ -1,20 +1,21 @@
-; PeskovHostInstaller.iss
+#define MyAppPublishDir "D:\a\APP\APP\app\publish"
+
 [Setup]
-AppName=Peskov Host
+AppName=PeskovHost
 AppVersion=1.0
 DefaultDirName={pf}\PeskovHost
 DefaultGroupName=PeskovHost
-OutputBaseFilename=PeskovHost-Installer
+OutputDir=output
+OutputBaseFilename=PeskovHostInstaller
 Compression=lzma
 SolidCompression=yes
 
 [Files]
-Source: "installer\app\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "installer\MicrosoftEdgeWebView2Setup.exe"; DestDir: "{tmp}"; Flags: ignoreversion
+Source: "{#MyAppPublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Icons]
 Name: "{group}\PeskovHost"; Filename: "{app}\PeskovHost.exe"
-Name: "{userdesktop}\PeskovHost"; Filename: "{app}\PeskovHost.exe"; Tasks: desktopicon
+Name: "{commondesktop}\PeskovHost"; Filename: "{app}\PeskovHost.exe"
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"
