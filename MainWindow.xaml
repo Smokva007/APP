@@ -1,0 +1,18 @@
+<Window x:Class="PeskovHost.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="PeskovHost" Height="800" Width="1200">
+    <DockPanel>
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="6">
+            <Button x:Name="BackButton" Click="BackButton_Click" Width="60">Back</Button>
+            <Button x:Name="ForwardButton" Click="ForwardButton_Click" Width="70">Forward</Button>
+            <Button x:Name="ReloadButton" Click="ReloadButton_Click" Width="60">Reload</Button>
+            <Button x:Name="OpenBrowserButton" Click="OpenBrowserButton_Click" Width="120">Open in Browser</Button>
+            <Button x:Name="BookmarkButton" Click="BookmarkButton_Click" Width="90">Bookmark</Button>
+            <ComboBox x:Name="BookmarksCombo" Width="400" IsEditable="False" SelectionChanged="BookmarksCombo_SelectionChanged"/>
+        </StackPanel>
+        <ProgressBar x:Name="LoadProgress" Height="6" DockPanel.Dock="Top" Minimum="0" Maximum="1"/>
+        <wv2:WebView2 x:Name="WebView" NavigationCompleted="WebView_NavigationCompleted" Source="https://host.peskov.xyz"/>
+    </DockPanel>
+</Window>
