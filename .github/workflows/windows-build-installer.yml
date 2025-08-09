@@ -18,10 +18,10 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore app/PeskovHost.csproj
+        run: dotnet restore APP/PeskovHost.csproj
 
       - name: Publish app
-        run: dotnet publish app/PeskovHost.csproj -c Release -o app/publish
+        run: dotnet publish APP/PeskovHost.csproj -c Release -o app/publish
 
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
