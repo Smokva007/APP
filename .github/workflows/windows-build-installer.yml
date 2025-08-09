@@ -1,104 +1,31 @@
-name: Build & Create Installer (Windows)
+name: Build Windows App
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
-
-env:
-  CSPROJ: 'PeskovHost.Wpf.csproj'  # change if different
-  PUBLISH_DIR: './publish/win-x64'
-  INSTALLER_OUTPUT: './installer'
-  INNO_SCRIPT: './PeskovHostInstaller.iss'  # must exist in repo root or change path
-  WEBVIEW2_BOOTSTRAPPER_URL: 'https://go.microsoft.com/fwlink/p/?LinkId=2124703' # Evergreen bootstrapper
+    branches:
+      - main
 
 jobs:
-  build-and-package:
+  build:
     runs-on: windows-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
-      - name: Setup .NET SDK
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: 8.0.x
 
-      - name: Restore NuGet packages
-        run: dotnet restore ${{ env.CSPROJ }} --disable-parallel
+      - name: Restore dependencies
+        run: dotnet restore app/PeskovHost.csproj
 
-      - name: Build (Release)
-        run: dotnet build ${{ env.CSPROJ }} -c Release --no-restore
+      - name: Publish app
+        run: dotnet publish app/PeskovHost.csproj -c Release -o app/publish
 
-      - name: Publish (win-x64)
-        run: dotnet publish ${{ env.CSPROJ }} -c Release -r win-x64 --self-contained false /p:PublishSingleFile=false -o ${{ env.PUBLISH_DIR }}
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
 
-      - name: List published files
-        run: dir ${{ env.PUBLISH_DIR }}
-
-      - name: Zip published app
-        shell: powershell
+      - name: Run Inno Setup to build installer
         run: |
-          $out = '${{ env.PUBLISH_DIR }}'
-          $zip = 'PeskovHost_win-x64_publish.zip'
-          if (Test-Path $zip) { Remove-Item $zip }
-          Compress-Archive -Path "$out\*" -DestinationPath $zip
-          Write-Host "Created $zip"
-
-      - name: Create installer output folder
-        run: |
-          mkdir -Force ${{ env.INSTALLER_OUTPUT }}
-
-      - name: Download WebView2 Evergreen Bootstrapper
-        shell: powershell
-        run: |
-          $url = '${{ env.WEBVIEW2_BOOTSTRAPPER_URL }}'
-          $out = '${{ env.INSTALLER_OUTPUT }}\MicrosoftEdgeWebView2Setup.exe'
-          Invoke-WebRequest -Uri $url -OutFile $out
-
-      - name: Install Chocolatey (for Inno Setup)
-        shell: powershell
-        run: |
-          Set-ExecutionPolicy Bypass -Scope Process -Force
-          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-
-      - name: Install Inno Setup (via choco)
-        shell: powershell
-        run: |
-          choco install -y innosetup
-
-      - name: Copy publish files into installer staging
-        run: |
-          $src = '${{ env.PUBLISH_DIR }}\*'
-          $dst = '${{ env.INSTALLER_OUTPUT }}\app'
-          New-Item -ItemType Directory -Force -Path $dst
-          Copy-Item -Path $src -Destination $dst -Recurse -Force
-
-      - name: Copy Inno Setup script (adjust paths if needed)
-        run: |
-          Copy-Item -Path '${{ env.INNO_SCRIPT }}' -Destination '${{ env.INSTALLER_OUTPUT }}\PeskovHostInstaller.iss' -Force
-
-      - name: Run Inno Setup Compiler (ISCC) to build installer
-        shell: powershell
-        run: |
-          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          if (-Not (Test-Path $iscc)) {
-            $iscc = "${env:ProgramFiles}\Inno Setup 6\ISCC.exe"
-          }
-          if (-Not (Test-Path $iscc)) { throw "ISCC not found at $iscc" }
-          Push-Location ${{ env.INSTALLER_OUTPUT }}
-          & $iscc "PeskovHostInstaller.iss"
-          Pop-Location
-
-      - name: Upload published zip artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: peskovhost-publish
-          path: PeskovHost_win-x64_publish.zip
-
-      - name: Upload installer artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: peskovhost-installer
-          path: ${{ env.INSTALLER_OUTPUT }}\PeskovHost-Installer.exe
+          iscc installer\PeskovHostInstaller.iss
